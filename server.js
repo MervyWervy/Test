@@ -6,7 +6,9 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-app.use(express.static("public"));
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "index.html"));
+});
 
 const ANSWER_TIME = 30; // seconds
 const VOTE_TIME = 30;   // seconds
