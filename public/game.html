@@ -237,6 +237,12 @@
       <div id="choices"></div>
     </div>
 
+    <!-- CORRECT ANSWER -->
+    <div id="correctScreen" class="hidden">
+      <h2>The Correct Answer Was...</h2>
+      <h1 id="correctText" style="color:#22c55e;"></h1>
+    </div>
+
     <!-- REVEAL -->
     <div id="reveal" class="hidden">
       <h2>Who Fooled Who 😈</h2>
@@ -318,7 +324,7 @@
 
     socket.on("correctAnswer", data => {
 
-      const { answer, answers } = data;
+      const { answer } = data;
 
       show("correctScreen");
 
@@ -340,7 +346,7 @@
       flash.style.opacity = 0.6;
       setTimeout(() => flash.style.opacity = 0, 400);
 
-      document.querySelectorAll(".choiceButton").forEach(btn => {
+      document.querySelectorAll(".choice").forEach(btn => {
         if (btn.innerText === answer) {
          btn.classList.add("correctChoice");
         } else {
@@ -351,7 +357,7 @@
 
     socket.on("reveal", reveal => {
 
-     show("revealScreen");
+     show("reveal");
 
      const container = document.getElementById("revealList");
      container.innerHTML = "";
