@@ -204,6 +204,11 @@
       margin: 10px 0;
       font-size:18px;
     }
+    .selectedChoice {
+      border: 3px solid var(--yellow);
+      box-shadow: 0 0 15px var(--yellow);
+      transform: scale(1.05);
+    }
   </style>
 </head>
 
@@ -253,6 +258,7 @@
     <div id="final" class="hidden">
       <h2>🏆 Final Scores</h2>
       <ul id="scores"></ul>
+      <button onclick="backToTitle()">Back To Title</button>
     </div>
 
   </div>
@@ -273,16 +279,21 @@
     socket.emit("joinRoom", { code, name });
 
     function show(id) {
-      ["wait","question","vote","reveal","final"].forEach(s => {
-        document.getElementById(s).classList.add("hidden");
+      ["wait","question","vote","reveal","final","correctScreen"].forEach(s => {
+        const el = document.getElementById(s);
+        if (el) el.classList.add("hidden");
       });
-      document.getElementById(id).classList.remove("hidden");
+
+      const target = document.getElementById(id);
+      if (target) target.classList.remove("hidden");
     }
     socket.off("question");
 
     socket.on("question", q => {
+
       show("question");
 
+      document.getElementById("correctText").innerText = "";
       const qText = document.getElementById("qText");
       qText.innerText = q;
       document.getElementById("answer").value = "";
@@ -307,37 +318,48 @@
 
     socket.on("choices", list => {
       show("vote");
+
       const div = document.getElementById("choices");
       div.innerHTML = "";
+
+      let selectedChoice = null;
 
       list.forEach(c => {
         const btn = document.createElement("button");
         btn.className = "choice";
         btn.textContent = c;
+
         btn.onclick = () => {
+          // Remove previous selection
+          document.querySelectorAll(".choice").forEach(b => {
+            b.classList.remove("selectedChoice");
+          });
+
+          // Mark this one
+          btn.classList.add("selectedChoice");
+          selectedChoice = c;
+
+          // Send vote to server
           socket.emit("vote", { code, choice: c });
-          show("wait");
         };
+
         div.appendChild(btn);
       });
     });
 
     socket.on("correctAnswer", data => {
 
-      const { answer } = data;
+      document.querySelectorAll(".choice").forEach(btn => {
+        btn.disabled = true;
+      });
 
-      show("correctScreen");
-
-      const correctText = document.getElementById("correctText");
-      correctText.innerText = answer;
-
-      document.getElementById("drumroll").play();
+      const correct = data.answer;
 
       window.speechSynthesis.cancel();
 
       setTimeout(() => {
         const speech = new SpeechSynthesisUtterance(
-          "The correct answer was " + answer
+          "The correct answer was " + correct
         );
         window.speechSynthesis.speak(speech);
       }, 100);
@@ -347,11 +369,11 @@
       setTimeout(() => flash.style.opacity = 0, 400);
 
       document.querySelectorAll(".choice").forEach(btn => {
-        if (btn.innerText === answer) {
-         btn.classList.add("correctChoice");
-        } else {
+       if (btn.innerText === correct) {
+          btn.classList.add("correctChoice");
+       } else {
           btn.classList.add("wrongChoice");
-        }
+       }
       });
     });
 
@@ -451,6 +473,12 @@
       document.getElementById("timerBar").style.background = "red";
     }
    });
+   function backToTitle() {
+      socket.emit("returnToLobby", { code });
+    }
+   socket.on("backToTitle", () => {
+      window.location.href = "/";
+    });
   </script>
 
 </body>

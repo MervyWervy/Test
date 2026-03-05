@@ -39,12 +39,12 @@ const QUESTIONS = [
   { q: "The most commonly forgotten item at airport security is…", a: "Shoes" },
   { q: "The word “nerd” was first used in a book by…", a: "Dr. Seuss" },
 
-  { q: "Bananas are berries, but strawberries are not. True or false?", a: "True" },
+  { q: "In October of 2013, eight sixth-graders from a New York college prep school were hospitalized after someone released (Blank) in a classroom.", a: "Axe body spray" },
   { q: "The longest wedding veil ever made was longer than the…", a: "Eiffel Tower" },
   { q: "The inventor of the Pringles can was buried in one, but what flavor?", a: "Original" },
-  { q: "The technical term for brain freeze is…", a: "Sphenopalatine ganglioneuralgia" },
+  { q: "Walter Arnold received the world's first speeding ticket in 1896 for going how many miles per hour?", a: "8" },
   { q: "It's weird work but Jackie Samuel charges $60 an hour to...", a: "Snuggle" },
-  { q: "The original London Bridge is now located in…", a: "Arizona" },
+  { q: "Frank Hayes is the first jockey to win a race while (Blank).", a: "Dead" },
   { q: "The Twitter bird has an official name. It is…", a: "Larry" },
   { q: "A spectator in an Illinois courtroom was sentenced to six months in jail for (Blank) during a trial.", a: "Yawning" },
   { q: "The first toy ever advertised on television was…", a: "Mr. Potato Head" },
@@ -57,16 +57,16 @@ const QUESTIONS = [
   { q: "The moon smells like (Blank) according to astronauts.", a: "Gunpowder" },
   { q: "The longest time between two twins being born is…", a: "87 days" },
   { q: "In 2007, to make a point, Nebraskain State Sen. Ernie Chambers filed a frivolous lawsuit against who?", a: "God" },
-  { q: "The official term for hiccups is…", a: "Singultus" },
-  { q: "The longest place name in the world is in…", a: "New Zealand" },
-  { q: "The first alarm clock could only ring at…", a: "4 a.m." },
+  { q: "A man in western Pennsylvania got a DUI for having an open can of beer while riding a what?", a: "Lawn mower" },
+  { q: "Alexander the Great made his men (Blank) before a battle.", a: "Shave" },
+  { q: "Anatidaephobia is the fear that somewhere in the world a (Blank) is watching you.", a: "Duck" },
 
   { q: "When Paul Nelson and Andrew Hunter climbed Britain's highest mountain in 2006, they made an unusual discovery hidden behind a pile of stones. It was a What?", a: "Piano" },
   { q: "The most expensive pizza in the world costs over how many dollars?", a: "12,000" },
-  { q: "A 2013 Pakistani game show caused a controversy when their grand prize was a...", a: "Baby" },
+  { q: "A 2013 Pakistani game show caused a controversy when their grand prize was a (Blank)", a: "Baby" },
   { q: "According to a Chinese myth, if a vampire comes across a sack of rice, he must What?", a: "Count each grain of rice" },
   { q: "For a story he was reporting on in 1955, Dan Rather tried (Blank) for the first time.", a: "Heroin" },
-  { q: "The first country to give women the right to vote was…", a: "New Zealand" },
+  { q: "Freddie Mercury backed out of a duet with Michael Jackson because Jackson brought a (Blank) to the recording studio", a: "Llama" },
   { q: "In 2012, a teenager from Weslaco, Texas claimed the reason he stabbed his friend was because a (Blank) made him do it.", a: "Ouija board" },
   { q: "The average cloud weighs over how many tons?", a: "1 million" },
   { q: "The human skeleton renews itself about every…", a: "10 years" },
@@ -88,6 +88,38 @@ function getRoom(socket) {
 // SOCKET LOGIC
 // --------------------
 io.on("connection", socket => {
+
+  socket.on("returnToLobby", ({ code }) => {
+  const room = rooms[code];
+  if (!room) return;
+
+  // Stop any running timer
+  if (room.timerInterval) {
+    clearInterval(room.timerInterval);
+    room.timerInterval = null;
+  }
+
+  // Reset game state
+  room.started = false;
+  room.round = 0;
+  room.answers = {};
+  room.votes = {};
+  room.currentQuestion = null;
+  room.questionPool = [...QUESTIONS];
+  room.customQuestions = [];
+
+  // Reset player stats
+  for (const id in room.players) {
+    room.players[id].score = 0;
+    room.players[id].fooled = 0;
+    room.players[id].correct = 0;
+    room.players[id].timeouts = 0;
+  }
+
+  // Send everyone back
+  io.to(code).emit("backToTitle");
+ });
+
   // ADD CUSTOM QUESTION
  socket.on("addQuestion", ({ code, question, answer }) => {
   const room = rooms[code];
@@ -305,6 +337,11 @@ function sendChoices(code) {
   const room = rooms[code];
   if (!room) return;
 
+  if (room.timerInterval) {
+    clearInterval(room.timerInterval);
+    room.timerInterval = null;
+  }
+
   // 🔹 Fill missing answers (players who didn't answer)
   for (const playerId in room.players) {
     if (!room.answers[playerId]) {
@@ -330,6 +367,11 @@ function sendChoices(code) {
 function scoreRound(code) {
   const room = rooms[code];
   const reveal = [];
+
+  if (room.timerInterval) {
+    clearInterval(room.timerInterval);
+    room.timerInterval = null;
+  }
 
   for (const voterId in room.votes) {
     const pick = room.votes[voterId];
