@@ -244,11 +244,19 @@
       show("question");
       document.getElementById("qText").innerText = q;
       document.getElementById("answer").value = "";
+
+      window.speechSynthesis.cancel();
+
+      setTimeout(() => {
+        window.speechSynthesis.speak(speech);
+      }, 50);
+
       const speech = new SpeechSynthesisUtterance(q);
-     speech.rate = 1;
-     speech.pitch = 1;
-     speech.lang = "en-US";
-     window.speechSynthesis.speak(speech);
+      speech.rate = 1;
+      speech.pitch = 1;
+      speech.lang = "en-US";
+
+      window.speechSynthesis.speak(speech);
    });
 
     function submitAnswer() {

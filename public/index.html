@@ -121,10 +121,64 @@
       object-fit: contain;
       margin-bottom: 16px;
     }
+    .modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+      animation: fadeIn .3s ease;
+    }
+    .modalContent {
+      background: #020617;
+      border: 3px solid var(--yellow);
+      border-radius: 20px;
+      padding: 24px;
+      max-width: 500px;
+      width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+      box-shadow: 0 20px 60px rgba(0,0,0,.7);
+      animation: pop .3s ease;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
   </style>
 </head>
 
 <body>
+  <div id="helpModal" class="modal hidden">
+   <div class="modalContent">
+     <h2 style="color:var(--yellow)">How to Play Educate</h2>
+
+     <p><strong>1️⃣ Teacher:</strong> Create a room and share the room code.</p>
+     <p><strong>2️⃣ Students:</strong> Join using the room code.</p>
+     <p><strong>3️⃣ The Fake Answer Phase:</strong> You create a very convincing fake answer based on the question!.</p>
+     <p><strong>4️⃣ Voting Phase:</strong> Choose the answer you think is real! think carefully as there might be fake ones!</p>
+     <p><strong>5️⃣ Scoring:</strong></p>
+     <ul>
+       <li> 100 pts for choosing the correct answer</li>
+       <li> 50 pts when someone chooses your fake answer</li>
+       <li> 0 pts when you didn't input any fake answer or votes</li>
+     </ul>
+
+     <p><strong> Goal:</strong> Score the most points after 5 rounds!</p>
+
+     <button class="primary" onclick="closeHelp()">Close</button>
+   </div>
+  </div>
   <div class="card">
     <img 
    src="/images/logo.png" 
@@ -141,6 +195,8 @@
     <button class="primary" onclick="createRoom()">Create Room</button>
 
     <button class="secondary" onclick="joinRoom()">Join Room</button>
+
+    <button class="secondary" onclick="openHelp()">How to Play</button>
 
     <button class="primary" id="startBtn" onclick="startGame()" style="display:none;">
       Start Game
@@ -267,9 +323,14 @@
     index
     });
    }
+    
+    function openHelp() {
+      document.getElementById("helpModal").classList.remove("hidden");
+    }
 
-
-
+    function closeHelp() {
+      document.getElementById("helpModal").classList.add("hidden");
+    }
 
     function getName() {
       return document.getElementById("name").value.trim();
