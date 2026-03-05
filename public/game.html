@@ -239,25 +239,25 @@
       });
       document.getElementById(id).classList.remove("hidden");
     }
+    socket.off("question");
 
     socket.on("question", q => {
       show("question");
-      document.getElementById("qText").innerText = q;
+
+      const qText = document.getElementById("qText");
+      qText.innerText = q;
       document.getElementById("answer").value = "";
 
       window.speechSynthesis.cancel();
 
       setTimeout(() => {
+        const speech = new SpeechSynthesisUtterance(q);
+        speech.rate = 1;
+        speech.pitch = 1;
+        speech.lang = "en-US";
         window.speechSynthesis.speak(speech);
-      }, 50);
-
-      const speech = new SpeechSynthesisUtterance(q);
-      speech.rate = 1;
-      speech.pitch = 1;
-      speech.lang = "en-US";
-
-      window.speechSynthesis.speak(speech);
-   });
+      }, 100);
+    });
 
     function submitAnswer() {
       const ans = document.getElementById("answer").value.trim();
