@@ -174,6 +174,36 @@
         opacity: 0;
       }
     }
+
+    #flashOverlay {
+      position: fixed;
+      top:0;
+      left:0;
+      width:100%;
+      height:100%;
+      background: #22c55e;
+      opacity:0;
+      pointer-events:none;
+      transition: opacity .4s ease;
+      z-index:999;
+    }
+
+    .correctChoice {
+      background:#22c55e !important;
+      transform: scale(1.1);
+      transition: all .4s ease;
+    }
+
+    .wrongChoice {
+      opacity:0.2;
+      transform: scale(.9);
+      transition: all .4s ease;
+    }
+    .revealItem {
+      animation: slideUp .5s ease;
+      margin: 10px 0;
+      font-size:18px;
+    }
   </style>
 </head>
 
@@ -220,6 +250,9 @@
     </div>
 
   </div>
+
+  <audio id="drumroll" src="drumroll.mp3"></audio>
+  <div id="flashOverlay"></div>
 
   <script src="/socket.io/socket.io.js"></script>
   <script>
@@ -283,21 +316,54 @@
       });
     });
 
-    socket.on("reveal", (list) => {
-    show("reveal");
+    socket.on("correctAnswer", data => {
 
-    const ul = document.getElementById("revealList");
-    ul.innerHTML = "";
+      const { answer, answers } = data;
 
-    list.forEach((text, i) => {
+      show("correctScreen");
+
+      const correctText = document.getElementById("correctText");
+      correctText.innerText = answer;
+
+      document.getElementById("drumroll").play();
+
+      window.speechSynthesis.cancel();
+
       setTimeout(() => {
-        const li = document.createElement("li");
-        li.textContent = text;
-        li.className = "slide";
-        ul.appendChild(li);
-      }, i * 600);
+        const speech = new SpeechSynthesisUtterance(
+          "The correct answer was " + answer
+        );
+        window.speechSynthesis.speak(speech);
+      }, 100);
+
+      const flash = document.getElementById("flashOverlay");
+      flash.style.opacity = 0.6;
+      setTimeout(() => flash.style.opacity = 0, 400);
+
+      document.querySelectorAll(".choiceButton").forEach(btn => {
+        if (btn.innerText === answer) {
+         btn.classList.add("correctChoice");
+        } else {
+          btn.classList.add("wrongChoice");
+        }
+      });
     });
-   });
+
+    socket.on("reveal", reveal => {
+
+     show("revealScreen");
+
+     const container = document.getElementById("revealList");
+     container.innerHTML = "";
+
+     reveal.forEach(line => {
+        const div = document.createElement("div");
+        div.className = "revealItem";
+        div.innerText = line;
+        container.appendChild(div);
+      });
+
+    });
 
     socket.on("finalResults", data => {
       show("final");

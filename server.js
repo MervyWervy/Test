@@ -350,20 +350,28 @@ function scoreRound(code) {
       }
     }
   }
+  io.to(code).emit("correctAnswer", {
+    answer: room.currentQuestion.a,
+    answers: room.answers
+  });
 
-  io.to(code).emit("reveal", reveal);
+  setTimeout(() => {
 
-  room.round++;
+    io.to(code).emit("reveal", reveal);
 
-  if (room.round >= MAX_ROUNDS || room.questionPool.length === 0) {
-   const stats = generateStats(room);
-   io.to(code).emit("finalResults", {
-     players: room.players,
-     stats
-   });
-  } else {
+    room.round++;
+
+    if (room.round >= MAX_ROUNDS || room.questionPool.length === 0) {
+      const stats = generateStats(room);
+      io.to(code).emit("finalResults", {
+        players: room.players,
+        stats
+      });
+    } else {
     setTimeout(() => startRound(code), 4000);
-  }
+    }
+
+  }, 3000);
 }
 
 const PORT = process.env.PORT || 3000;
