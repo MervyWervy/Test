@@ -189,212 +189,45 @@
 
 <body>
   <div class="card">
-    <img 
-   src="/images/logo.png" 
-   alt="ACT Logo"
-   class="title-image"
-   />
-
+    <img src="/images/logo.png" alt="ACT Logo" class="title-image" />
     <h1>Educate!</h1>
-
     <input id="name" placeholder="Your name" />
+    <hr style="border: 1px solid #1e293b; margin: 20px 0;">
+    
+    <button class="primary" onclick="createRoom()">Create New Game</button>
+    
+    <div style="margin-top: 20px;">
+        <input id="code" placeholder="Enter 4-Digit Code" />
+        <button class="secondary" onclick="joinRoom()">Join Existing Room</button>
+    </div>
 
-    <input id="code" placeholder="Room code (to join)" />
-
-    <button class="primary" onclick="createRoom()">Create Room</button>
-
-    <button class="secondary" onclick="joinRoom()">Join Room</button>
-
-    <button onclick="openInstructions()">--!How to Play!--</button>
-
-    <button class="primary" id="startBtn" onclick="startGame()" style="display:none;">
-      Start Game
+    <button onclick="openInstructions()" style="background:none; color:var(--yellow); border:1px solid var(--yellow); margin-top:30px;">
+        How to Play
     </button>
-   <div id="questionMaker" style="display:none; margin-top:20px;">
-    <h3 style="color:var(--yellow)">Question Maker</h3>
+</div>
 
-    <input id="customQ" placeholder="Enter question" />
-    <input id="customA" placeholder="Correct answer" />
-    <button class="secondary" onclick="addQuestion()">Add Question</button>
-
-    <p id="questionCount" class="small"></p>
-
-    <hr style="margin:20px 0; border:1px solid #1e293b">
-
-    <h3 style="color:var(--yellow)">Preview Questions</h3>
-    <ul id="previewList"></ul>
-   </div>
-
-
-
-    <div id="roomInfo"></div>
-
-    <ul id="players"></ul>
-  </div>
-
-  <script src="/socket.io/socket.io.js"></script>
-  <script>
+<script>
     const socket = io();
-    let roomCode = null;
-    let isHost = false;
-
-   let adding = false;
-
-    // 🎵 SOUND SYSTEM
-   const sounds = {
-     click: new Audio("https://actions.google.com/sounds/v1/ui/click.ogg"),
-     submit: new Audio("https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg"),
-     vote: new Audio("https://actions.google.com/sounds/v1/cartoon/pop.ogg"),
-     correct: new Audio("https://actions.google.com/sounds/v1/cartoon/concussive_hit_guitar_boing.ogg"),
-     fooled: new Audio("https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg"),
-     countdown: new Audio("https://actions.google.com/sounds/v1/alarms/beep_short.ogg"),
-     win: new Audio("https://actions.google.com/sounds/v1/cartoon/ta_da.ogg"),
-     drum: new Audio("https://actions.google.com/sounds/v1/drums/drum_roll.ogg"),
-     bgm: new Audio("https://actions.google.com/sounds/v1/ambiences/arcade_room.ogg")
-   };
-
-   // Loop background music
-   sounds.bgm.loop = true;
-   sounds.bgm.volume = 0.2;
-
-   function play(sound) {
-     if (sounds[sound]) {
-       sounds[sound].currentTime = 0;
-       sounds[sound].play();
-     }
-   }
-
-   function addQuestion() {
-   if (adding) return;
-   adding = true;
-
-   const question = document.getElementById("customQ").value.trim();
-   const answer = document.getElementById("customA").value.trim();
-
-   if (!question || !answer) {
-    adding = false;
-    return alert("Fill both fields");
-   }
-
-   socket.emit("addQuestion", {
-    code: roomCode,
-    question,
-    answer
-   });
-
-   document.getElementById("customQ").value = "";
-   document.getElementById("customA").value = "";
-
-   setTimeout(() => adding = false, 300);
-   }
-
-
-
-    socket.on("questionAdded", count => {
-    document.getElementById("questionCount").innerText =
-    count + " custom question(s) added.";
-   });
-
-   socket.off("updateCustomQuestions");
-
-   socket.on("updateCustomQuestions", list => {
-   const ul = document.getElementById("previewList");
-   ul.innerHTML = "";
-
-   list.forEach((q, index) => {
-    const li = document.createElement("li");
-    li.style.marginBottom = "10px";
-
-    li.innerHTML = `
-      <strong>${q.q}</strong><br>
-      <small>Answer: ${q.a}</small><br>
-      <button onclick="readQuestion('${q.q.replace(/'/g,"\\'")}')">🔊 Read</button>
-      <button onclick="deleteQuestion(${index})">❌ Delete</button>
-    `;
-
-    ul.appendChild(li);
-    });
-   });
-
-    function readQuestion(text) {
-    const speech = new SpeechSynthesisUtterance(text);
-    speech.rate = 1;
-    speech.pitch = 1;
-    speech.lang = "en-US";
-    window.speechSynthesis.speak(speech);
-   }
-
-    function deleteQuestion(index) {
-    socket.emit("deleteQuestion", {
-    code: roomCode,
-    index
-    });
-   }
-
-    function openInstructions(){
-      document.getElementById("instructionsPanel").classList.remove("hidden");
-    }
-
-    function closeInstructions(){
-      document.getElementById("instructionsPanel").classList.add("hidden");
-    }
-
-    function getName() {
-      return document.getElementById("name").value.trim();
-    }
-
-    function getCode() {
-      return document.getElementById("code").value.trim();
-    }
 
     function createRoom() {
-      play("click");
-      const name = getName();
-      if (!name) return alert("Enter your name");
-      isHost = true;
-      socket.emit("createRoom", name);
+        const name = document.getElementById("name").value.trim();
+        if (!name) return alert("Enter your name");
+        socket.emit("createRoom", name);
     }
 
     function joinRoom() {
-      play("click");
-      const name = getName();
-      const code = getCode();
-      if (!name || !code) return alert("Enter name and room code");
-      roomCode = code;
-      socket.emit("joinRoom", { code, name });
-      document.getElementById("roomInfo").innerText =
-        "Joined room " + code + ". Waiting for teacher…";
-    }
-
-    function startGame() {
-      play("submit");
-      sounds.bgm.play();
-      socket.emit("startGame", roomCode);
+        const name = document.getElementById("name").value.trim();
+        const code = document.getElementById("code").value.trim();
+        if (!name || !code) return alert("Enter name and room code");
+        // Redirect to the room page with parameters
+        window.location.href = `/room.html?code=${code}&name=${encodeURIComponent(name)}`;
     }
 
     socket.on("roomCreated", code => {
-      roomCode = code;
-      document.getElementById("roomInfo").innerText =
-        "Room created! Code: " + code;
-      document.getElementById("startBtn").style.display = "block";
-      document.getElementById("questionMaker").style.display = "block";
+        const name = document.getElementById("name").value.trim();
+        window.location.href = `/room.html?code=${code}&name=${encodeURIComponent(name)}&host=true`;
     });
-
-    socket.on("players", players => {
-      const ul = document.getElementById("players");
-      ul.innerHTML = "";
-      Object.values(players).forEach(p => {
-        const li = document.createElement("li");
-        li.textContent = p.name;
-        ul.appendChild(li);
-      });
-    });
-
-    socket.on("goToGame", () => {
-      const name = encodeURIComponent(getName());
-      window.location.href = `/game.html?code=${roomCode}&name=${name}`;
-    });
-  </script>
+</script>
   <div id="instructionsPanel" class="hidden instructionsPanel">
 
   <h2>How to Play Educate</h2>

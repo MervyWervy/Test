@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Educate - Waiting Room</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+        /* ... (Include the CSS styles from your original index.html) ... */
+        .room-header { color: var(--yellow); font-size: 1.2rem; margin-bottom: 20px; }
+        .code-display { font-size: 3rem; letter-spacing: 5px; color: white; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="room-header">ROOM CODE</div>
+        <div id="displayCode" class="code-display">----</div>
+        
+        <div id="hostControls" class="hidden">
+            <button class="primary" onclick="startGame()">START GAME</button>
+            <div id="questionMaker">
+                <h3 style="color:var(--yellow)">Question Maker</h3>
+                <input id="customQ" placeholder="Enter question" />
+                <input id="customA" placeholder="Correct answer" />
+                <button class="secondary" onclick="addQuestion()">Add Question</button>
+                <ul id="previewList" style="text-align:left; font-size:0.8rem;"></ul>
+            </div>
+        </div>
+
+        <div id="playerWait" class="hidden">
+            <p>Waiting for the teacher to start...</p>
+        </div>
+
+        <h3 style="border-top: 1px solid #1e293b; padding-top: 20px;">Players Joined:</h3>
+        <ul id="players"></ul>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const params = new URLSearchParams(window.location.search);
+        const roomCode = params.get("code");
+        const name = params.get("name");
+        const isHost = params.get("host") === "true";
+
+        document.getElementById("displayCode").innerText = roomCode;
+        if(isHost) document.getElementById("hostControls").classList.remove("hidden");
+        else document.getElementById("playerWait").classList.remove("hidden");
+
+        // Join the room immediately on load
+        socket.emit("joinRoom", { code: roomCode, name: name });
+
+        function startGame() {
+            socket.emit("startGame", roomCode);
+        }
+
+        socket.on("players", players => {
+            const ul = document.getElementById("players");
+            ul.innerHTML = "";
+            Object.values(players).forEach(p => {
+                const li = document.createElement("li");
+                li.style.padding = "10px";
+                li.style.background = "#020617";
+                li.style.marginBottom = "5px";
+                li.style.borderRadius = "8px";
+                li.textContent = p.name;
+                ul.appendChild(li);
+            });
+        });
+
+        socket.on("goToGame", () => {
+            window.location.href = `/game.html?code=${roomCode}&name=${encodeURIComponent(name)}`;
+        });
+
+        // Add the addQuestion/updateCustomQuestions logic here from your original index.html
+    </script>
+</body>
+</html>
