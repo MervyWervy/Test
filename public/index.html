@@ -155,30 +155,39 @@
       from { opacity: 0; }
       to { opacity: 1; }
     }
+    .instructionsPanel{
+      position:fixed;
+      top:50%;
+      left:50%;
+      transform:translate(-50%,-50%);
+      width:90%;
+      max-width:700px;
+      background:#0f172a;
+      padding:30px;
+      border-radius:15px;
+      border:3px solid #ffd43b;
+      box-shadow:0 20px 60px rgba(0,0,0,.6);
+      max-height:80vh;
+      overflow-y:auto;
+      text-align:left;
+    }
+
+    .instructionsPanel h2{
+      text-align:center;
+      color:#ffd43b;
+    }
+
+    .instructionsPanel ul{
+      padding-left:20px;
+    }
+
+    .instructionsPanel button{
+      margin-top:20px;
+    }
   </style>
 </head>
 
 <body>
-  <div id="helpModal" class="modal hidden">
-   <div class="modalContent">
-     <h2 style="color:var(--yellow)">How to Play Educate</h2>
-
-     <p><strong>1️⃣ Teacher:</strong> Create a room and share the room code.</p>
-     <p><strong>2️⃣ Students:</strong> Join using the room code.</p>
-     <p><strong>3️⃣ The Fake Answer Phase:</strong> You create a very convincing fake answer based on the question!.</p>
-     <p><strong>4️⃣ Voting Phase:</strong> Choose the answer you think is real! think carefully as there might be fake ones!</p>
-     <p><strong>5️⃣ Scoring:</strong></p>
-     <ul>
-       <li> 100 pts for choosing the correct answer</li>
-       <li> 50 pts when someone chooses your fake answer</li>
-       <li> 0 pts when you didn't input any fake answer or votes</li>
-     </ul>
-
-     <p><strong> Goal:</strong> Score the most points after 5 rounds!</p>
-
-     <button class="primary" onclick="closeHelp()">Close</button>
-   </div>
-  </div>
   <div class="card">
     <img 
    src="/images/logo.png" 
@@ -196,7 +205,7 @@
 
     <button class="secondary" onclick="joinRoom()">Join Room</button>
 
-    <button class="secondary" onclick="openHelp()">How to Play</button>
+    <button onclick="openInstructions()">How to Play</button>
 
     <button class="primary" id="startBtn" onclick="startGame()" style="display:none;">
       Start Game
@@ -221,8 +230,6 @@
     <div id="roomInfo"></div>
 
     <ul id="players"></ul>
-
-    <p class="small">Made by: Group 5!</p>
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
@@ -323,13 +330,13 @@
     index
     });
    }
-    
-    function openHelp() {
-      document.getElementById("helpModal").classList.remove("hidden");
+
+    function openInstructions(){
+      document.getElementById("instructionsPanel").classList.remove("hidden");
     }
 
-    function closeHelp() {
-      document.getElementById("helpModal").classList.add("hidden");
+    function closeInstructions(){
+      document.getElementById("instructionsPanel").classList.add("hidden");
     }
 
     function getName() {
@@ -388,6 +395,67 @@
       window.location.href = `/game.html?code=${roomCode}&name=${name}`;
     });
   </script>
+  <div id="instructionsPanel" class="hidden instructionsPanel">
 
+  <h2>How to Play Educate</h2>
+
+  <h3>Step 1: One Player Creates a Room (The Host)</h3>
+  <p>
+  One player must click <b>Create Room</b>. This player becomes the <b>Host</b>.
+  The host will receive a <b>4-digit room code</b>.
+  </p>
+
+  <h3>Step 2: Other Players Join</h3>
+  <p>
+  Other players click <b>Join Room</b> and enter the room code given by the host.
+  All players must enter their name before joining.
+  </p>
+
+  <h3>Step 3: The Host Starts the Game</h3>
+  <p>
+  When everyone has joined, the host presses the <b>Start Game</b> button.
+  The game will begin for all players at the same time.
+  </p>
+
+  <h3>Step 4: Answer the Question</h3>
+  <p>
+  Each round shows a question that has a real answer.
+  Players must create a <b>fake answer</b> that sounds believable.
+  Try to trick other players!
+  </p>
+
+  <h3>Step 5: Vote for the Correct Answer</h3>
+  <p>
+  After everyone submits their fake answer, all answers are mixed together.
+  Players must choose the answer they believe is the <b>real one</b>.
+  </p>
+
+  <h3>Step 6: Score Points</h3>
+  <ul>
+  <li> 100 points for choosing the correct answer</li>
+  <li> 50 points when another player chooses your fake answer</li>
+  <li> 0 points if time runs out</li>
+  </ul>
+
+  <h3>Step 7: Multiple Rounds</h3>
+  <p>
+  The game continues for several rounds. Each round has a new question.
+  </p>
+
+  <h3>Step 8: Final Results</h3>
+  <p>
+  At the end of the game, scores are shown along with special awards such as:
+  </p>
+
+  <ul>
+  <li> Best Fake Artist</li>
+  <li> Smartest Player</li>
+  <li> Most Timeouts</li>
+  <li> Champion</li>
+  </ul>
+
+  <button onclick="closeInstructions()">Close</button>
+
+  </div>
 </body>
 </html>
