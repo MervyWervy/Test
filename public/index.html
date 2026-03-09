@@ -223,6 +223,14 @@
         window.location.href = `/room.html?code=${code}&name=${encodeURIComponent(name)}`;
     }
 
+    function openInstructions(){
+      document.getElementById("instructionsPanel").classList.remove("hidden");
+    }
+
+    function closeInstructions(){
+      document.getElementById("instructionsPanel").classList.add("hidden");
+    }
+
     socket.on("roomCreated", code => {
         const name = document.getElementById("name").value.trim();
         window.location.href = `/room.html?code=${code}&name=${encodeURIComponent(name)}&host=true`;

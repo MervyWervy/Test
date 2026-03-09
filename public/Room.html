@@ -5,9 +5,186 @@
     <title>Educate - Waiting Room</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <style>
-        /* ... (Include the CSS styles from your original index.html) ... */
         .room-header { color: var(--yellow); font-size: 1.2rem; margin-bottom: 20px; }
         .code-display { font-size: 3rem; letter-spacing: 5px; color: white; margin: 10px 0; }
+        :root {
+      --blue: #0b5ed7;
+      --yellow: #ffd43b;
+      --dark: #0f172a;
+      --card: #111827;
+      --text: #e5e7eb;
+    }
+
+    * {
+      box-sizing: border-box;
+      font-family: "Segoe UI", sans-serif;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: radial-gradient(circle at top, var(--blue), var(--dark));
+      display: flex;
+      justify-content: center;
+      color: var(--text);
+      overflow-y: auto;
+    }
+
+
+    .card {
+      background: linear-gradient(180deg, #0b1220, #020617);
+      border-radius: 20px;
+      margin: 40px 0;
+      padding: 28px;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 30px 80px rgba(0,0,0,.6);
+      border: 3px solid var(--yellow);
+      text-align: center;
+    }
+
+    h1 {
+      margin-top: 0;
+      font-size: 2.4rem;
+      color: var(--yellow);
+      letter-spacing: 1px;
+    }
+
+    input {
+      width: 100%;
+      padding: 14px;
+      margin: 10px 0;
+      font-size: 1rem;
+      border-radius: 12px;
+      border: none;
+      outline: none;
+      background: #020617;
+      color: white;
+      border: 2px solid #1e293b;
+    }
+
+    button {
+      width: 100%;
+      padding: 14px;
+      margin-top: 12px;
+      border-radius: 14px;
+      border: none;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: transform .1s ease, box-shadow .1s ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(0,0,0,.4);
+    }
+
+    .primary {
+      background: var(--yellow);
+      color: #000;
+    }
+
+    .secondary {
+      background: var(--blue);
+      color: white;
+    }
+
+    .small {
+      font-size: .9rem;
+      margin-top: 6px;
+      opacity: .8;
+    }
+
+    #roomInfo {
+      margin-top: 16px;
+      font-weight: bold;
+      color: var(--yellow);
+    }
+
+    #players {
+      list-style: none;
+      padding: 0;
+      margin-top: 12px;
+      text-align: left;
+    }
+
+    #players li {
+      padding: 6px 10px;
+      background: #020617;
+      border-radius: 8px;
+      margin-bottom: 6px;
+      border-left: 4px solid var(--yellow);
+    }
+    .title-image {
+      width: 100%;
+      max-height: 160px;
+      object-fit: contain;
+      margin-bottom: 16px;
+    }
+    .modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+      animation: fadeIn .3s ease;
+    }
+    .modalContent {
+      background: #020617;
+      border: 3px solid var(--yellow);
+      border-radius: 20px;
+      padding: 24px;
+      max-width: 500px;
+      width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+      box-shadow: 0 20px 60px rgba(0,0,0,.7);
+      animation: pop .3s ease;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    .instructionsPanel{
+      position:fixed;
+      top:50%;
+      left:50%;
+      transform:translate(-50%,-50%);
+      width:90%;
+      max-width:700px;
+      background:#0f172a;
+      padding:30px;
+      border-radius:15px;
+      border:3px solid #ffd43b;
+      box-shadow:0 20px 60px rgba(0,0,0,.6);
+      max-height:80vh;
+      overflow-y:auto;
+      text-align:left;
+    }
+
+    .instructionsPanel h2{
+      text-align:center;
+      color:#ffd43b;
+    }
+
+    .instructionsPanel ul{
+      padding-left:20px;
+    }
+
+    .instructionsPanel button{
+      margin-top:20px;
+    }
     </style>
 </head>
 <body>
@@ -72,6 +249,72 @@
         });
 
         // Add the addQuestion/updateCustomQuestions logic here from your original index.html
+        function addQuestion() {
+        if (adding) return;
+        adding = true;
+
+        const question = document.getElementById("customQ").value.trim();
+        const answer = document.getElementById("customA").value.trim();
+
+        if (!question || !answer) {
+         adding = false;
+         return alert("Fill both fields");
+        }
+
+        socket.emit("addQuestion", {
+         code: roomCode,
+         question,
+         answer
+        });
+
+        document.getElementById("customQ").value = "";
+        document.getElementById("customA").value = "";
+
+        setTimeout(() => adding = false, 300);
+        }
+
+
+
+        socket.on("questionAdded", count => {
+        document.getElementById("questionCount").innerText =
+        count + " custom question(s) added.";
+        });
+
+        socket.off("updateCustomQuestions");
+
+        socket.on("updateCustomQuestions", list => {
+        const ul = document.getElementById("previewList");
+        ul.innerHTML = "";
+
+        list.forEach((q, index) => {
+        const li = document.createElement("li");
+        li.style.marginBottom = "10px";
+
+        li.innerHTML = `
+         <strong>${q.q}</strong><br>
+         <small>Answer: ${q.a}</small><br>
+         <button onclick="readQuestion('${q.q.replace(/'/g,"\\'")}')">🔊 Read</button>
+         <button onclick="deleteQuestion(${index})">❌ Delete</button>
+       `;
+
+        ul.appendChild(li);
+        });
+       });
+  
+        function readQuestion(text) {
+        const speech = new SpeechSynthesisUtterance(text);
+        speech.rate = 1;
+        speech.pitch = 1;
+        speech.lang = "en-US";
+        window.speechSynthesis.speak(speech);
+       }
+
+        function deleteQuestion(index) {
+        socket.emit("deleteQuestion", {
+        code: roomCode,
+        index
+        });
+       }
     </script>
 </body>
 </html>
