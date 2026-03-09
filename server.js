@@ -342,11 +342,16 @@ function sendChoices(code) {
     room.timerInterval = null;
   }
 
-  // 🔹 Fill missing answers (players who didn't answer)
+  const activeAnswerers = []; // Track who actually typed something
+
+  // Fill missing answers (players who didn't answer)
   for (const playerId in room.players) {
     if (!room.answers[playerId]) {
-     room.answers[playerId] = null;
-     room.players[playerId].timeouts++;
+      room.answers[playerId] = null;
+      room.players[playerId].timeouts++;
+    } else {
+      // If they have an entry in room.answers, they are eligible to vote
+      activeAnswerers.push(playerId);
     }
   }
 
@@ -358,7 +363,11 @@ function sendChoices(code) {
   // Shuffle
   choices.sort(() => Math.random() - 0.5);
 
-  io.to(code).emit("choices", choices);
+  // Send choices PLUS the list of IDs allowed to vote
+  io.to(code).emit("choices", { 
+    list: choices, 
+    eligibleVoters: activeAnswerers 
+  });
 
   // Start vote timer
   startTimer(code, "vote", VOTE_TIME);

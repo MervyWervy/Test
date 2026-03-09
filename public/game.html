@@ -316,30 +316,41 @@
       show("wait");
     }
 
-    socket.on("choices", list => {
+    socket.on("choices", data => {
       show("vote");
 
       const div = document.getElementById("choices");
       div.innerHTML = "";
+      
+      // Check if THIS player is in the eligible list
+      const canVote = data.eligibleVoters.includes(socket.id);
 
-      let selectedChoice = null;
+      if (!canVote) {
+        const msg = document.createElement("p");
+        msg.innerHTML = "<b style='color: #ff4444;'>You didn't answer in time!</b><br>You are disqualified from voting this round.";
+        div.appendChild(msg);
+      }
 
-      list.forEach(c => {
+      data.list.forEach(c => {
         const btn = document.createElement("button");
         btn.className = "choice";
         btn.textContent = c;
 
+        // Disable button if they didn't answer
+        if (!canVote) {
+          btn.disabled = true;
+          btn.style.opacity = "0.5";
+          btn.style.cursor = "not-allowed";
+        }
+
         btn.onclick = () => {
-          // Remove previous selection
+          if (!canVote) return; // Extra safety
+
           document.querySelectorAll(".choice").forEach(b => {
             b.classList.remove("selectedChoice");
           });
 
-          // Mark this one
           btn.classList.add("selectedChoice");
-          selectedChoice = c;
-
-          // Send vote to server
           socket.emit("vote", { code, choice: c });
         };
 
