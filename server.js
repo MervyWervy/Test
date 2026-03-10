@@ -119,18 +119,20 @@ io.on("connection", socket => {
   // Send everyone back
   io.to(code).emit("backToTitle");
  });
-
-  // ADD CUSTOM QUESTION
+ // ADD CUSTOM QUESTION (Server-side)
  socket.on("addQuestion", ({ code, question, answer }) => {
   const room = rooms[code];
   if (!room) return;
-  if (socket.id !== room.host) return;
+  
+  // This security check ensures only the host can add questions
+  if (socket.id !== room.host) return; 
 
   room.customQuestions.push({
     q: question.trim(),
     a: answer.trim()
   });
 
+  // Only send the updated list back to the host
   io.to(room.host).emit("updateCustomQuestions", room.customQuestions);
  });
 
@@ -146,13 +148,13 @@ io.on("connection", socket => {
 
 
 
-  // CREATE ROOM (HOST)
+  // CREATE ROOM (Just reserves the room code now)
   socket.on("createRoom", name => {
     const code = makeCode();
 
     rooms[code] = {
       code,
-      host: socket.id,
+      host: null, // The host ID will be assigned when they actually load room.html
       players: {},
       round: 0,
       started: false,
@@ -163,36 +165,41 @@ io.on("connection", socket => {
       currentQuestion: null
     };
 
-    rooms[code].players[socket.id] = {
-     name,
-     score: 0,
-     fooled: 0,
-     correct: 0,
-     timeouts: 0
-    };
-
-    socket.join(code);
+    // Tell the client the room is ready so they can redirect
     socket.emit("roomCreated", code);
-    io.to(code).emit("players", rooms[code].players);
   });
 
-  // JOIN ROOM
-  socket.on("joinRoom", ({ code, name }) => {
-    const room = rooms[code];
-    if (!room) return;
+  // JOIN ROOM (Handles both the Host and regular players loading the page)
+  socket.on("joinRoom", ({ code, name, isHost }) => {
+  const room = rooms[code];
+  if (!room) {
+    socket.emit("invalidRoom");
+    return;
+  }
 
+  // If they are the host, save their ID but DON'T add them to room.players
+  if (isHost) {
+    room.host = socket.id;
+  } else {
+    // Only non-hosts are added to the players list for scoring/voting
     if (!room.players[socket.id]) {
-      room.players[socket.id] = { name, score: 0 };
+      room.players[socket.id] = { 
+        name, 
+        score: 0,
+        fooled: 0,
+        correct: 0,
+        timeouts: 0
+      };
     }
+  }
 
-    socket.join(code);
-    io.to(code).emit("players", room.players);
+  socket.join(code);
+  io.to(code).emit("players", room.players);
 
-    // late join sync
-    if (room.started && room.currentQuestion) {
-      socket.emit("question", room.currentQuestion.q);
-    }
-  });
+  if (room.started && room.currentQuestion) {
+    socket.emit("question", room.currentQuestion.q);
+  }
+ });
 
   // START GAME (HOST ONLY)
   socket.on("startGame", code => {
@@ -236,18 +243,17 @@ io.on("connection", socket => {
   socket.on("disconnect", () => {
     for (const code in rooms) {
       const room = rooms[code];
+      if (room.host === socket.id) {
+        room.host = null; // Clear host
+      }
       if (room.players[socket.id]) {
         delete room.players[socket.id];
         io.to(code).emit("players", room.players);
       }
     }
   });
+
 });
-
-// --------------------
-// GAME FUNCTIONS
-// --------------------
-
 function generateStats(room) {
   const players = Object.values(room.players);
 

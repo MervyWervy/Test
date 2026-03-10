@@ -219,12 +219,19 @@
         const name = params.get("name");
         const isHost = params.get("host") === "true";
 
+        // ADD THIS LINE: This was the missing piece causing the error!
+        let adding = false; 
+
         document.getElementById("displayCode").innerText = roomCode;
         if(isHost) document.getElementById("hostControls").classList.remove("hidden");
         else document.getElementById("playerWait").classList.remove("hidden");
 
-        // Join the room immediately on load
-        socket.emit("joinRoom", { code: roomCode, name: name });
+        socket.emit("joinRoom", { code: roomCode, name: name, isHost: isHost });
+
+        socket.on("invalidRoom", () => {
+            alert("Room not found or has been closed.");
+            window.location.href = "/";
+        });
 
         function startGame() {
             socket.emit("startGame", roomCode);
@@ -245,76 +252,67 @@
         });
 
         socket.on("goToGame", () => {
-            window.location.href = `/game.html?code=${roomCode}&name=${encodeURIComponent(name)}`;
+          // We add &host=true to the link if the current user is the host
+          const hostParam = isHost ? "&host=true" : "";
+          window.location.href = `/game.html?code=${roomCode}&name=${encodeURIComponent(name)}${hostParam}`;
         });
 
-        // Add the addQuestion/updateCustomQuestions logic here from your original index.html
+        // Fixed addQuestion function
         function addQuestion() {
-        if (adding) return;
-        adding = true;
+            if (adding) return; // Prevents double-clicking
+            adding = true;
 
-        const question = document.getElementById("customQ").value.trim();
-        const answer = document.getElementById("customA").value.trim();
+            const question = document.getElementById("customQ").value.trim();
+            const answer = document.getElementById("customA").value.trim();
 
-        if (!question || !answer) {
-         adding = false;
-         return alert("Fill both fields");
+            if (!question || !answer) {
+                adding = false;
+                return alert("Please fill in both the question and the answer.");
+            }
+
+            socket.emit("addQuestion", {
+                code: roomCode,
+                question: question,
+                answer: answer
+            });
+
+            // Clear the inputs
+            document.getElementById("customQ").value = "";
+            document.getElementById("customA").value = "";
+
+            // Reset the "adding" flag after a short delay
+            setTimeout(() => { adding = false; }, 300);
         }
-
-        socket.emit("addQuestion", {
-         code: roomCode,
-         question,
-         answer
-        });
-
-        document.getElementById("customQ").value = "";
-        document.getElementById("customA").value = "";
-
-        setTimeout(() => adding = false, 300);
-        }
-
-
-
-        socket.on("questionAdded", count => {
-        document.getElementById("questionCount").innerText =
-        count + " custom question(s) added.";
-        });
-
-        socket.off("updateCustomQuestions");
 
         socket.on("updateCustomQuestions", list => {
-        const ul = document.getElementById("previewList");
-        ul.innerHTML = "";
+            const ul = document.getElementById("previewList");
+            ul.innerHTML = "";
 
-        list.forEach((q, index) => {
-        const li = document.createElement("li");
-        li.style.marginBottom = "10px";
-
-        li.innerHTML = `
-         <strong>${q.q}</strong><br>
-         <small>Answer: ${q.a}</small><br>
-         <button onclick="readQuestion('${q.q.replace(/'/g,"\\'")}')">🔊 Read</button>
-         <button onclick="deleteQuestion(${index})">❌ Delete</button>
-       `;
-
-        ul.appendChild(li);
+            list.forEach((q, index) => {
+                const li = document.createElement("li");
+                li.style.marginBottom = "10px";
+                li.innerHTML = `
+                    <strong>${q.q}</strong><br>
+                    <small>Answer: ${q.a}</small><br>
+                    <button onclick="readQuestion('${q.q.replace(/'/g,"\\'")}')" style="width:auto; padding:5px 10px; margin-right:5px;">🔊 Read</button>
+                    <button onclick="deleteQuestion(${index})" style="width:auto; padding:5px 10px; background:red; color:white;">❌ Delete</button>
+                `;
+                ul.appendChild(li);
+            });
         });
-       });
   
         function readQuestion(text) {
-        const speech = new SpeechSynthesisUtterance(text);
-        speech.rate = 1;
-        speech.pitch = 1;
-        speech.lang = "en-US";
-        window.speechSynthesis.speak(speech);
-       }
+            const speech = new SpeechSynthesisUtterance(text);
+            speech.lang = "en-US";
+            window.speechSynthesis.speak(speech);
+        }
 
         function deleteQuestion(index) {
-        socket.emit("deleteQuestion", {
-        code: roomCode,
-        index
-        });
-       }
+            socket.emit("deleteQuestion", {
+                code: roomCode,
+                index: index
+            });
+        }
     </script>
 </body>
 </html>

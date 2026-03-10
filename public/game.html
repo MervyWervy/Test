@@ -271,12 +271,16 @@
     const socket = io();
 
     const params = new URLSearchParams(window.location.search);
+    const isHost = params.get("host") === "true";
+
+    // ADD THESE TWO LINES to actually get the code and name from the web address!
     const code = params.get("code");
     const name = params.get("name");
 
     document.getElementById("playerName").innerText = "You are: " + name;
 
-    socket.emit("joinRoom", { code, name });
+    // UPDATE THIS LINE to make sure the server knows if you are the host or not
+    socket.emit("joinRoom", { code, name, isHost });
 
     function show(id) {
       ["wait","question","vote","reveal","final","correctScreen"].forEach(s => {
@@ -290,13 +294,31 @@
     socket.off("question");
 
     socket.on("question", q => {
-
       show("question");
 
       document.getElementById("correctText").innerText = "";
       const qText = document.getElementById("qText");
       qText.innerText = q;
       document.getElementById("answer").value = "";
+
+      // IF HOST: Hide the input and button, show a waiting message
+      if (isHost) {
+        document.getElementById("answer").style.display = "none";
+        document.querySelector("#question button").style.display = "none";
+        
+        // Add a temporary waiting text if it doesn't exist
+        if (!document.getElementById("hostWaitQ")) {
+          const waitMsg = document.createElement("p");
+          waitMsg.id = "hostWaitQ";
+          waitMsg.style.color = "var(--yellow)";
+          waitMsg.innerText = "Waiting for players to submit their lies...";
+          document.getElementById("question").appendChild(waitMsg);
+        }
+      } else {
+        // Ensure inputs are visible for normal players
+        document.getElementById("answer").style.display = "inline-block";
+        document.querySelector("#question button").style.display = "inline-block";
+      }
 
       window.speechSynthesis.cancel();
 
@@ -321,8 +343,25 @@
 
       const div = document.getElementById("choices");
       div.innerHTML = "";
+
+      // IF HOST: Just show the list of choices, no buttons
+      if (isHost) {
+        const hostMsg = document.createElement("h3");
+        hostMsg.style.color = "var(--yellow)";
+        hostMsg.innerText = "Players are voting on these options:";
+        div.appendChild(hostMsg);
+
+        data.list.forEach(c => {
+          const item = document.createElement("div");
+          item.style.padding = "10px";
+          item.style.borderBottom = "1px solid #1e293b";
+          item.textContent = c;
+          div.appendChild(item);
+        });
+        return; // Stop here so the host code below doesn't run
+      }
       
-      // Check if THIS player is in the eligible list
+      // FOR REGULAR PLAYERS: Check if they are in the eligible list
       const canVote = data.eligibleVoters.includes(socket.id);
 
       if (!canVote) {
