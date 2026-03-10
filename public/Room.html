@@ -257,9 +257,9 @@
           window.location.href = `/game.html?code=${roomCode}&name=${encodeURIComponent(name)}${hostParam}`;
         });
 
-        // Fixed addQuestion function
+      
         function addQuestion() {
-            if (adding) return; // Prevents double-clicking
+            if (adding) return; 
             adding = true;
 
             const question = document.getElementById("customQ").value.trim();
@@ -280,7 +280,7 @@
             document.getElementById("customQ").value = "";
             document.getElementById("customA").value = "";
 
-            // Reset the "adding" flag after a short delay
+            
             setTimeout(() => { adding = false; }, 300);
         }
 
