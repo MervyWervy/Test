@@ -219,7 +219,7 @@
         const name = params.get("name");
         const isHost = params.get("host") === "true";
 
-        // ADD THIS LINE: This was the missing piece causing the error!
+    
         let adding = false; 
 
         document.getElementById("displayCode").innerText = roomCode;
@@ -252,7 +252,6 @@
         });
 
         socket.on("goToGame", () => {
-          // We add &host=true to the link if the current user is the host
           const hostParam = isHost ? "&host=true" : "";
           window.location.href = `/game.html?code=${roomCode}&name=${encodeURIComponent(name)}${hostParam}`;
         });
@@ -276,7 +275,6 @@
                 answer: answer
             });
 
-            // Clear the inputs
             document.getElementById("customQ").value = "";
             document.getElementById("customA").value = "";
 

@@ -273,13 +273,13 @@
     const params = new URLSearchParams(window.location.search);
     const isHost = params.get("host") === "true";
 
-    // ADD THESE TWO LINES to actually get the code and name from the web address!
+  
     const code = params.get("code");
     const name = params.get("name");
 
     document.getElementById("playerName").innerText = "You are: " + name;
 
-    // UPDATE THIS LINE to make sure the server knows if you are the host or not
+   
     socket.emit("joinRoom", { code, name, isHost });
 
     function show(id) {
@@ -301,12 +301,10 @@
       qText.innerText = q;
       document.getElementById("answer").value = "";
 
-      // IF HOST: Hide the input and button, show a waiting message
       if (isHost) {
         document.getElementById("answer").style.display = "none";
         document.querySelector("#question button").style.display = "none";
         
-        // Add a temporary waiting text if it doesn't exist
         if (!document.getElementById("hostWaitQ")) {
           const waitMsg = document.createElement("p");
           waitMsg.id = "hostWaitQ";
@@ -315,7 +313,6 @@
           document.getElementById("question").appendChild(waitMsg);
         }
       } else {
-        // Ensure inputs are visible for normal players
         document.getElementById("answer").style.display = "inline-block";
         document.querySelector("#question button").style.display = "inline-block";
       }
@@ -344,7 +341,7 @@
       const div = document.getElementById("choices");
       div.innerHTML = "";
 
-      // IF HOST: Just show the list of choices, no buttons
+   
       if (isHost) {
         const hostMsg = document.createElement("h3");
         hostMsg.style.color = "var(--yellow)";
@@ -358,10 +355,10 @@
           item.textContent = c;
           div.appendChild(item);
         });
-        return; // Stop here so the host code below doesn't run
+        return; 
       }
       
-      // FOR REGULAR PLAYERS: Check if they are in the eligible list
+    
       const canVote = data.eligibleVoters.includes(socket.id);
 
       if (!canVote) {
@@ -375,7 +372,7 @@
         btn.className = "choice";
         btn.textContent = c;
 
-        // Disable button if they didn't answer
+    
         if (!canVote) {
           btn.disabled = true;
           btn.style.opacity = "0.5";
@@ -383,7 +380,7 @@
         }
 
         btn.onclick = () => {
-          if (!canVote) return; // Extra safety
+          if (!canVote) return; 
 
           document.querySelectorAll(".choice").forEach(b => {
             b.classList.remove("selectedChoice");
@@ -452,13 +449,12 @@
     const container = document.getElementById("scores");
     container.innerHTML = "";
 
-    // 🥁 Drumroll Sound
+   
     const drum = new Audio("https://actions.google.com/sounds/v1/drums/drum_roll.ogg");
     drum.play();
 
     setTimeout(() => {
 
-      // 🎊 Confetti
       for (let i = 0; i < 80; i++) {
         const conf = document.createElement("div");
         conf.className = "confetti";
@@ -469,7 +465,7 @@
         setTimeout(() => conf.remove(), 4000);
       }
 
-      // 🏆 Podium
+   
       const podium = document.createElement("div");
       podium.className = "podium";
 
@@ -487,7 +483,7 @@
 
       container.appendChild(podium);
 
-      // 🎖 Special Awards
+    
       const awards = document.createElement("div");
       awards.style.marginTop = "20px";
       awards.innerHTML = `

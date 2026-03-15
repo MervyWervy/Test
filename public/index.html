@@ -221,7 +221,6 @@
         const name = document.getElementById("name").value.trim();
         const code = document.getElementById("code").value.trim();
         if (!name || !code) return alert("Enter name and room code");
-        // Redirect to the room page with parameters
         window.location.href = `/room.html?code=${code}&name=${encodeURIComponent(name)}`;
     }
 

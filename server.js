@@ -9,15 +9,12 @@ const io = new Server(server);
 
 app.use(express.static("public"));
 
-const ANSWER_TIME = 30; // seconds
-const VOTE_TIME = 30;   // seconds
+const ANSWER_TIME = 30; 
+const VOTE_TIME = 30;   
 
 const MAX_ROUNDS = 5;
 const rooms = {};
 
-// --------------------
-// QUESTIONS (Fibbage-style)
-// --------------------
 const QUESTIONS = [
   { q: "The dot over the lowercase letter “i” is called a what?", a: "Tittle" },
   { q: "Before it was Google, the search engine was originally named…", a: "Backrub" },
@@ -73,9 +70,6 @@ const QUESTIONS = [
   { q: "According to a 2010 study, one child in the U.S. was injured every 46 minutes by a What?", a: "Bounce house" }
 ];
 
-// --------------------
-// HELPERS
-// --------------------
 function makeCode() {
   return Math.floor(1000 + Math.random() * 9000).toString();
 }
@@ -84,22 +78,17 @@ function getRoom(socket) {
   return Object.values(rooms).find(r => r.players[socket.id]);
 }
 
-// --------------------
-// SOCKET LOGIC
-// --------------------
 io.on("connection", socket => {
 
   socket.on("returnToLobby", ({ code }) => {
   const room = rooms[code];
   if (!room) return;
 
-  // Stop any running timer
   if (room.timerInterval) {
     clearInterval(room.timerInterval);
     room.timerInterval = null;
   }
 
-  // Reset game state
   room.started = false;
   room.round = 0;
   room.answers = {};
@@ -108,7 +97,6 @@ io.on("connection", socket => {
   room.questionPool = [...QUESTIONS];
   room.customQuestions = [];
 
-  // Reset player stats
   for (const id in room.players) {
     room.players[id].score = 0;
     room.players[id].fooled = 0;
@@ -116,15 +104,13 @@ io.on("connection", socket => {
     room.players[id].timeouts = 0;
   }
 
-  // Send everyone back
   io.to(code).emit("backToTitle");
  });
- // ADD CUSTOM QUESTION (Server-side)
+
  socket.on("addQuestion", ({ code, question, answer }) => {
   const room = rooms[code];
   if (!room) return;
   
-  // This security check ensures only the host can add questions
   if (socket.id !== room.host) return; 
 
   room.customQuestions.push({
@@ -132,11 +118,9 @@ io.on("connection", socket => {
     a: answer.trim()
   });
 
-  // Only send the updated list back to the host
   io.to(room.host).emit("updateCustomQuestions", room.customQuestions);
  });
 
- // DELETE CUSTOM QUESTION
  socket.on("deleteQuestion", ({ code, index }) => {
   const room = rooms[code];
   if (!room) return;
@@ -146,15 +130,12 @@ io.on("connection", socket => {
   io.to(room.host).emit("updateCustomQuestions", room.customQuestions);
  });
 
-
-
-  // CREATE ROOM (Just reserves the room code now)
   socket.on("createRoom", name => {
     const code = makeCode();
 
     rooms[code] = {
       code,
-      host: null, // The host ID will be assigned when they actually load room.html
+      host: null, 
       players: {},
       round: 0,
       started: false,
@@ -165,11 +146,11 @@ io.on("connection", socket => {
       currentQuestion: null
     };
 
-    // Tell the client the room is ready so they can redirect
+  
     socket.emit("roomCreated", code);
   });
 
-  // JOIN ROOM (Handles both the Host and regular players loading the page)
+
   socket.on("joinRoom", ({ code, name, isHost }) => {
   const room = rooms[code];
   if (!room) {
@@ -177,11 +158,11 @@ io.on("connection", socket => {
     return;
   }
 
-  // If they are the host, save their ID but DON'T add them to room.players
+ 
   if (isHost) {
     room.host = socket.id;
   } else {
-    // Only non-hosts are added to the players list for scoring/voting
+ 
     if (!room.players[socket.id]) {
       room.players[socket.id] = { 
         name, 
@@ -201,7 +182,7 @@ io.on("connection", socket => {
   }
  });
 
-  // START GAME (HOST ONLY)
+ 
   socket.on("startGame", code => {
     const room = rooms[code];
     if (!room) return;
@@ -215,7 +196,7 @@ io.on("connection", socket => {
     startRound(code);
   });
 
-  // SUBMIT FAKE ANSWER
+
   socket.on("submitAnswer", ({ code, answer }) => {
     const room = rooms[code];
     if (!room || !room.started) return;
@@ -227,7 +208,7 @@ io.on("connection", socket => {
     }
   });
 
-  // VOTE
+
   socket.on("vote", ({ code, choice }) => {
     const room = rooms[code];
     if (!room) return;
@@ -239,12 +220,12 @@ io.on("connection", socket => {
     }
   });
 
-  // DISCONNECT
+  
   socket.on("disconnect", () => {
     for (const code in rooms) {
       const room = rooms[code];
       if (room.host === socket.id) {
-        room.host = null; // Clear host
+        room.host = null; 
       }
       if (room.players[socket.id]) {
         delete room.players[socket.id];
@@ -285,7 +266,7 @@ function startTimer(code, phase, duration) {
   const room = rooms[code];
   if (!room) return;
 
-  // CLEAR PREVIOUS TIMER
+  
   if (room.timerInterval) {
     clearInterval(room.timerInterval);
   }
@@ -348,34 +329,34 @@ function sendChoices(code) {
     room.timerInterval = null;
   }
 
-  const activeAnswerers = []; // Track who actually typed something
+  const activeAnswerers = []; 
 
-  // Fill missing answers (players who didn't answer)
+ 
   for (const playerId in room.players) {
     if (!room.answers[playerId]) {
       room.answers[playerId] = null;
       room.players[playerId].timeouts++;
     } else {
-      // If they have an entry in room.answers, they are eligible to vote
+     
       activeAnswerers.push(playerId);
     }
   }
 
   const choices = Object.values(room.answers).filter(a => a);
 
-  // Add correct answer
+
   choices.push(room.currentQuestion.a);
 
-  // Shuffle
+
   choices.sort(() => Math.random() - 0.5);
 
-  // Send choices PLUS the list of IDs allowed to vote
+ 
   io.to(code).emit("choices", { 
     list: choices, 
     eligibleVoters: activeAnswerers 
   });
 
-  // Start vote timer
+
   startTimer(code, "vote", VOTE_TIME);
 }
 
