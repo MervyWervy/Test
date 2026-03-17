@@ -108,7 +108,6 @@
       margin-bottom: 8px;
     }
 
-    /* --- PODIUM --- */
     .podium {
       display: flex;
       justify-content: center;
@@ -137,7 +136,6 @@
       to { transform: translateY(0); }
     }
 
-    /* --- POP ANIMATION --- */
     .pop {
       animation: pop 0.4s ease;
     }
@@ -147,7 +145,6 @@
       100% { transform: scale(1); opacity: 1; }
     }
 
-    /* --- SLIDE IN --- */
     .slide {
       animation: slideIn 0.6s ease forwards;
       transform: translateX(-40px);
@@ -158,7 +155,6 @@
       to { transform: translateX(0); opacity: 1; }
     }
 
-   /* --- CONFETTI --- */
     .confetti {
       position: fixed;
       width: 8px;
@@ -218,7 +214,6 @@
 
     <div class="playerName" id="playerName"></div>
 
-    <!-- WAIT -->
     <div id="wait">
       <h2>Waiting for question…</h2>
     </div>
@@ -229,38 +224,40 @@
 
     <div id="timerText" style="margin-bottom:10px;"></div>
 
-    <!-- QUESTION -->
     <div id="question" class="hidden">
       <h2 id="qText"></h2>
       <input id="answer" placeholder="Type your fake answer" />
       <button onclick="submitAnswer()">Submit</button>
     </div>
 
-    <!-- VOTE -->
     <div id="vote" class="hidden">
       <h2>Pick the real answer</h2>
       <div id="choices"></div>
     </div>
 
-    <!-- CORRECT ANSWER -->
     <div id="correctScreen" class="hidden">
       <h2>The Correct Answer Was...</h2>
       <h1 id="correctText" style="color:#22c55e;"></h1>
     </div>
 
-    <!-- REVEAL -->
     <div id="reveal" class="hidden">
       <h2>Who Fooled Who 😈</h2>
       <ul id="revealList"></ul>
     </div>
 
-    <!-- FINAL -->
     <div id="final" class="hidden">
       <h2>🏆 Final Scores</h2>
       <ul id="scores"></ul>
       <button onclick="backToTitle()">Back To Title</button>
     </div>
 
+  </div>
+
+  <div id="reveal" class="hidden">
+    <h2>Who Fooled Who 😈</h2>
+    <ul id="revealList"></ul>
+      
+    <div id="hostNextRoundDiv" style="margin-top: 20px;"></div>
   </div>
 
   <audio id="drumroll" src="drumroll.mp3"></audio>
@@ -463,11 +460,12 @@
     });
 
     socket.on("reveal", reveal => {
-
      show("reveal");
 
      const container = document.getElementById("revealList");
      container.innerHTML = "";
+
+     document.getElementById("hostNextRoundDiv").innerHTML = "";
 
      reveal.forEach(line => {
         const div = document.createElement("div");
@@ -476,6 +474,30 @@
         container.appendChild(div);
       });
 
+    });
+
+    socket.on("hostRevealControls", isGameOver => {
+      if (!isHost) return; 
+
+      const div = document.getElementById("hostNextRoundDiv");
+      div.innerHTML = ""; 
+
+      const btn = document.createElement("button");
+      btn.className = "primary pop";
+      
+      if (isGameOver) {
+        btn.textContent = "End Game & Show the Winners ";
+      } else {
+        btn.textContent = "Next Round ➡️";
+      }
+
+      btn.onclick = () => {
+        btn.disabled = true;
+        btn.style.opacity = "0.5";
+        socket.emit("nextRound", code);
+      };
+
+      div.appendChild(btn);
     });
 
     socket.on("finalResults", data => {

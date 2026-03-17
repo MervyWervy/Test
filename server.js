@@ -221,6 +221,22 @@ io.on("connection", socket => {
     }
   });
 
+  socket.on("nextRound", code => {
+    const room = rooms[code];
+    if (!room) return;
+    if (socket.id !== room.host) return;
+
+    if (room.round >= MAX_ROUNDS || room.questionPool.length === 0) {
+      const stats = generateStats(room);
+      io.to(code).emit("finalResults", {
+        players: room.players,
+        stats
+      });
+    } else {
+      startRound(code);
+    }
+  });
+
   socket.on("hostFavorite", ({ code, choice }) => {
     const room = rooms[code];
     if (!room) return;
@@ -395,38 +411,31 @@ function scoreRound(code) {
       if (liarId) {
         room.players[liarId].score += 50;
         room.players[liarId].fooled++;
-        reveal.push(`${voterName} was fooled by ${room.players[liarId].name}`);
+        reveal.push(`${voterName} fell for "${pick}" (Faked by ${room.players[liarId].name})`);
       }
     }
   }
+
   if (room.favoriteChoice && room.favoriteChoice !== room.currentQuestion.a) {
     const favoriteId = Object.keys(room.answers).find(id => room.answers[id] === room.favoriteChoice);
-    
     if (favoriteId) {
       room.players[favoriteId].score += 50;
       reveal.push(`WHAT! ${room.players[favoriteId].name} got +50 points for being the Host's Favorite Answer!`);
     }
   }
- 
+
   io.to(code).emit("correctAnswer", {
     answer: room.currentQuestion.a,
     answers: room.answers
   });
 
   setTimeout(() => {
-
     io.to(code).emit("reveal", reveal);
-
     room.round++;
 
-    if (room.round >= MAX_ROUNDS || room.questionPool.length === 0) {
-      const stats = generateStats(room);
-      io.to(code).emit("finalResults", {
-        players: room.players,
-        stats
-      });
-    } else {
-    setTimeout(() => startRound(code), 4000);
+    const isGameOver = (room.round >= MAX_ROUNDS || room.questionPool.length === 0);
+    if (room.host) {
+      io.to(room.host).emit("hostRevealControls", isGameOver);
     }
 
   }, 3000);
