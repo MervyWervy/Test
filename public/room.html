@@ -311,6 +311,43 @@
                 index: index
             });
         }
+        function toggleChat() {
+            document.getElementById("chatBox").classList.toggle("hidden");
+        }
+
+        function sendChat() {
+            const input = document.getElementById("chatInput");
+            const text = input.value.trim();
+            if (!text) return;
+            
+            socket.emit("sendMessage", { code: roomCode, name: name, text: text });
+            input.value = "";
+        }
+
+        socket.on("receiveMessage", data => {
+            const msgs = document.getElementById("chatMessages");
+            const isMe = data.name === name;
+            msgs.innerHTML += `
+              <div style="margin-bottom:8px; text-align:${isMe ? 'right' : 'left'};">
+                <span style="font-size:0.7rem; color:gray;">${data.name}</span><br>
+                <span style="background:${isMe ? 'var(--blue)' : '#1e293b'}; padding:6px 10px; border-radius:10px; display:inline-block;">${data.text}</span>
+              </div>
+            `;
+            msgs.scrollTop = msgs.scrollHeight;
+        });
     </script>
+    <button onclick="toggleChat()" style="position:fixed; bottom:20px; right:20px; width:60px; height:60px; border-radius:30px; background:var(--yellow); border:none; font-size:24px; cursor:pointer; z-index:1000; box-shadow:0 4px 10px rgba(0,0,0,0.5); transition: transform 0.2s;">💬</button>
+
+    <div id="chatBox" class="hidden" style="position:fixed; bottom:90px; right:20px; width:300px; height:350px; background:#0f172a; border:2px solid var(--yellow); border-radius:15px; display:flex; flex-direction:column; z-index:1000; box-shadow:0 10px 30px rgba(0,0,0,0.8);">
+        <div style="background:var(--yellow); color:black; padding:10px; border-radius:12px 12px 0 0; font-weight:bold; display:flex; justify-content:space-between;">
+            <span>Room Chat</span>
+            <button onclick="toggleChat()" style="background:none; border:none; font-weight:bold; cursor:pointer; margin:0; padding:0; width:auto;">X</button>
+        </div>
+        <div id="chatMessages" style="flex:1; padding:10px; overflow-y:auto; font-size:0.9rem; text-align:left; color:white;"></div>
+        <div style="padding:10px; border-top:1px solid #1e293b; display:flex;">
+            <input id="chatInput" placeholder="Type a message..." style="margin:0; flex:1; padding:8px; border-radius:8px 0 0 8px; border:none; background:#020617; color:white;" onkeypress="if(event.key==='Enter') sendChat()"/>
+            <button onclick="sendChat()" style="margin:0; width:60px; padding:8px; border-radius:0 8px 8px 0; background:var(--blue); color:white; border:none; cursor:pointer;">Send</button>
+        </div>
+    </div>
 </body>
 </html>

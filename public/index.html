@@ -194,6 +194,16 @@
     <input id="name" placeholder="Your name" />
     <hr style="border: 1px solid #1e293b; margin: 20px 0;">
     
+    <input id="name" placeholder="Your name" />
+    
+    <select id="roundsInput" style="width: 100%; padding: 14px; margin: 10px 0; font-size: 1rem; border-radius: 12px; background: #020617; color: white; border: 2px solid #1e293b; outline: none;">
+        <option value="3">Short Game (3 Rounds)</option>
+        <option value="5" selected>Normal Game (5 Rounds)</option>
+        <option value="7">Long Game (7 Rounds)</option>
+        <option value="10">Marathon (10 Rounds)</option>
+    </select>
+
+    <hr style="border: 1px solid #1e293b; margin: 20px 0;">
     <button class="primary" onclick="createRoom()">Create New Game</button>
     
     <div style="margin-top: 20px;">
@@ -213,8 +223,10 @@
 
     function createRoom() {
         const name = document.getElementById("name").value.trim();
+        const rounds = parseInt(document.getElementById("roundsInput").value);
         if (!name) return alert("Enter your name");
-        socket.emit("createRoom", name);
+        
+        socket.emit("createRoom", { name, rounds });
     }
 
     function joinRoom() {

@@ -12,7 +12,6 @@ app.use(express.static("public"));
 const ANSWER_TIME = 30; 
 const VOTE_TIME = 30;   
 
-const MAX_ROUNDS = 5;
 const rooms = {};
 
 const QUESTIONS = [
@@ -24,7 +23,6 @@ const QUESTIONS = [
   { q: "The plastic tip at the end of a shoelace is called…", a: "Aglet" },
   { q: "In ancient Rome, urine was taxed because it was used to…", a: "Wash clothes" },
   { q: "The original name for Bluetooth technology was…", a: "Short-Link" },
-
   { q: "As a young student in Buenos Aires, Pope Francis worked as a...", a: "Bouncer" },
   { q: "The only mammal capable of true flight is the…", a: "Bat" },
   { q: "The hashtag symbol is technically called an…", a: "Octothorpe" },
@@ -35,7 +33,6 @@ const QUESTIONS = [
   { q: "The smell after rain is called…", a: "Petrichor" },
   { q: "The most commonly forgotten item at airport security is…", a: "Shoes" },
   { q: "The word “nerd” was first used in a book by…", a: "Dr. Seuss" },
-
   { q: "In October of 2013, eight sixth-graders from a New York college prep school were hospitalized after someone released (Blank) in a classroom.", a: "Axe body spray" },
   { q: "The longest wedding veil ever made was longer than the…", a: "Eiffel Tower" },
   { q: "The inventor of the Pringles can was buried in one, but what flavor?", a: "Original" },
@@ -46,7 +43,6 @@ const QUESTIONS = [
   { q: "A spectator in an Illinois courtroom was sentenced to six months in jail for (Blank) during a trial.", a: "Yawning" },
   { q: "The first toy ever advertised on television was…", a: "Mr. Potato Head" },
   { q: "In Japan, letting a sumo wrestler make a baby cry is considered…", a: "Good luck" },
-
   { q: "In 2012, a 26-year-old man from London went on a mission to lick every (Blank) in the United Kingdom.", a: "Cathedral" },
   { q: "The national animal of Wales is the…", a: "Red kite" },
   { q: "The human nose can remember over how many scents?", a: "50,000" },
@@ -57,7 +53,6 @@ const QUESTIONS = [
   { q: "A man in western Pennsylvania got a DUI for having an open can of beer while riding a what?", a: "Lawn mower" },
   { q: "Alexander the Great made his men (Blank) before a battle.", a: "Shave" },
   { q: "Anatidaephobia is the fear that somewhere in the world a (Blank) is watching you.", a: "Duck" },
-
   { q: "When Paul Nelson and Andrew Hunter climbed Britain's highest mountain in 2006, they made an unusual discovery hidden behind a pile of stones. It was a What?", a: "Piano" },
   { q: "The most expensive pizza in the world costs over how many dollars?", a: "12,000" },
   { q: "A 2013 Pakistani game show caused a controversy when their grand prize was a (Blank)", a: "Baby" },
@@ -79,6 +74,10 @@ function getRoom(socket) {
 }
 
 io.on("connection", socket => {
+
+  socket.on("sendMessage", ({ code, name, text }) => {
+    io.to(code).emit("receiveMessage", { name, text });
+  });
 
   socket.on("returnToLobby", ({ code }) => {
   const room = rooms[code];
@@ -131,7 +130,7 @@ io.on("connection", socket => {
   io.to(room.host).emit("updateCustomQuestions", room.customQuestions);
  });
 
-  socket.on("createRoom", name => {
+  socket.on("createRoom", ({ name, rounds }) => {
     const code = makeCode();
 
     rooms[code] = {
@@ -139,6 +138,7 @@ io.on("connection", socket => {
       host: null, 
       players: {},
       round: 0,
+      maxRounds: rounds || 5,
       started: false,
       answers: {},
       votes: {},
@@ -148,7 +148,6 @@ io.on("connection", socket => {
       favoriteChoice: null
     };
 
-  
     socket.emit("roomCreated", code);
   });
 
@@ -194,8 +193,13 @@ io.on("connection", socket => {
     room.started = true;
     room.round = 0;
 
+    room.players = {};
+
     io.to(code).emit("goToGame");
-    startRound(code);
+
+    setTimeout(() => {
+      startRound(code);
+    }, 3000);
   });
 
 
@@ -226,7 +230,7 @@ io.on("connection", socket => {
     if (!room) return;
     if (socket.id !== room.host) return;
 
-    if (room.round >= MAX_ROUNDS || room.questionPool.length === 0) {
+    if (room.round >= room.maxRounds || room.questionPool.length === 0) {
       const stats = generateStats(room);
       io.to(code).emit("finalResults", {
         players: room.players,
@@ -433,7 +437,7 @@ function scoreRound(code) {
     io.to(code).emit("reveal", reveal);
     room.round++;
 
-    const isGameOver = (room.round >= MAX_ROUNDS || room.questionPool.length === 0);
+    const isGameOver = (room.round >= room.maxRounds || room.questionPool.length === 0);
     if (room.host) {
       io.to(room.host).emit("hostRevealControls", isGameOver);
     }
