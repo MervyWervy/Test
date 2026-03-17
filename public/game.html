@@ -345,18 +345,56 @@
       if (isHost) {
         const hostMsg = document.createElement("h3");
         hostMsg.style.color = "var(--yellow)";
-        hostMsg.innerText = "Players are voting on these options:";
+        hostMsg.innerText = "Players are currently voting. Pick your favorite funny answer to give them bonus points!";
         div.appendChild(hostMsg);
 
         data.list.forEach(c => {
           const item = document.createElement("div");
           item.style.padding = "10px";
           item.style.borderBottom = "1px solid #1e293b";
-          item.textContent = c;
+          item.style.display = "flex";
+          item.style.justifyContent = "space-between";
+          item.style.alignItems = "center";
+
+          const textSpan = document.createElement("span");
+          textSpan.textContent = c;
+
+          const favBtn = document.createElement("button");
+          favBtn.textContent = "🌟 Favorite";
+          favBtn.style.width = "auto";
+          favBtn.style.padding = "5px 15px";
+          favBtn.style.margin = "0";
+
+          favBtn.onclick = () => {
+            socket.emit("hostFavorite", { code, choice: c });
+          };
+
+          item.appendChild(textSpan);
+          item.appendChild(favBtn);
           div.appendChild(item);
         });
         return; 
       }
+
+    socket.on("favoriteSelected", choice => {
+      const div = document.getElementById("choices");
+      div.querySelectorAll("div").forEach(item => {
+        const span = item.querySelector("span");
+        const btn = item.querySelector("button");
+        
+        if (span && btn) {
+          if (span.textContent === choice) {
+            btn.textContent = "⭐ Selected!";
+            btn.style.background = "#22c55e";
+            btn.style.color = "white";
+          } else {
+            btn.textContent = "🌟 Favorite";
+            btn.style.background = "var(--yellow)";
+            btn.style.color = "black";
+          }
+        }
+      });
+    });
       
     
       const canVote = data.eligibleVoters.includes(socket.id);

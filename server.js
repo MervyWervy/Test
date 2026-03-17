@@ -96,6 +96,7 @@ io.on("connection", socket => {
   room.currentQuestion = null;
   room.questionPool = [...QUESTIONS];
   room.customQuestions = [];
+  room.favoriteChoice = null;
 
   for (const id in room.players) {
     room.players[id].score = 0;
@@ -143,7 +144,8 @@ io.on("connection", socket => {
       votes: {},
       questionPool: [...QUESTIONS],
       customQuestions: [],
-      currentQuestion: null
+      currentQuestion: null,
+      favoriteChoice: null
     };
 
   
@@ -208,7 +210,6 @@ io.on("connection", socket => {
     }
   });
 
-
   socket.on("vote", ({ code, choice }) => {
     const room = rooms[code];
     if (!room) return;
@@ -220,6 +221,15 @@ io.on("connection", socket => {
     }
   });
 
+  socket.on("hostFavorite", ({ code, choice }) => {
+    const room = rooms[code];
+    if (!room) return;
+    if (socket.id !== room.host) return;
+
+    room.favoriteChoice = choice;
+    
+    io.to(room.host).emit("favoriteSelected", choice);
+  });
   
   socket.on("disconnect", () => {
     for (const code in rooms) {
@@ -307,6 +317,7 @@ function startRound(code) {
 
   room.answers = {};
   room.votes = {};
+  room.favoriteChoice = null;
 
  if (room.customQuestions.length > 0) {
   room.currentQuestion = room.customQuestions.shift();
@@ -388,6 +399,15 @@ function scoreRound(code) {
       }
     }
   }
+  if (room.favoriteChoice && room.favoriteChoice !== room.currentQuestion.a) {
+    const favoriteId = Object.keys(room.answers).find(id => room.answers[id] === room.favoriteChoice);
+    
+    if (favoriteId) {
+      room.players[favoriteId].score += 50;
+      reveal.push(`WHAT! ${room.players[favoriteId].name} got +50 points for being the Host's Favorite Answer!`);
+    }
+  }
+ 
   io.to(code).emit("correctAnswer", {
     answer: room.currentQuestion.a,
     answers: room.answers
