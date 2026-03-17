@@ -183,8 +183,7 @@ io.on("connection", socket => {
   }
  });
 
- 
-  socket.on("startGame", code => {
+  socket.on("startGame", ({ code, rounds }) => {
     const room = rooms[code];
     if (!room) return;
     if (socket.id !== room.host) return;
@@ -192,6 +191,8 @@ io.on("connection", socket => {
 
     room.started = true;
     room.round = 0;
+    
+    room.maxRounds = rounds || 5; 
 
     room.players = {};
 

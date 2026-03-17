@@ -193,13 +193,23 @@
         <div id="displayCode" class="code-display">----</div>
         
         <div id="hostControls" class="hidden">
+            <div style="margin-bottom: 15px; background: #020617; padding: 10px; border-radius: 12px; border: 1px solid #1e293b;">
+                <label style="color: var(--yellow); font-weight: bold; margin-right: 10px;">Game Length:</label>
+                <select id="roundsInput" style="padding: 8px; border-radius: 8px; background: #0f172a; color: white; border: 1px solid var(--blue); outline: none;">
+                  <option value="3">Short (3 Rounds)</option>
+                  <option value="5" selected>Normal (5 Rounds)</option>
+                  <option value="7">Long (7 Rounds)</option>
+                  <option value="10">Marathon (10 Rounds)</option>
+                </select>
+            </div>
+
             <button class="primary" onclick="startGame()">START GAME</button>
+            
             <div id="questionMaker">
-                <h3 style="color:var(--yellow)">Question Maker</h3>
-                <input id="customQ" placeholder="Enter question" />
-                <input id="customA" placeholder="Correct answer" />
-                <button class="secondary" onclick="addQuestion()">Add Question</button>
-                <ul id="previewList" style="text-align:left; font-size:0.8rem;"></ul>
+              <input id="customQ" placeholder="Enter question" />
+              <input id="customA" placeholder="Correct answer" />
+              <button class="secondary" onclick="addQuestion()">Add Question</button>
+              <ul id="previewList" style="text-align:left; font-size:0.8rem;"></ul>
             </div>
         </div>
 
@@ -234,7 +244,9 @@
         });
 
         function startGame() {
-            socket.emit("startGame", roomCode);
+            const rounds = parseInt(document.getElementById("roundsInput").value);
+            
+            socket.emit("startGame", { code: roomCode, rounds: rounds });
         }
 
         socket.on("players", players => {
