@@ -520,11 +520,8 @@
     }
    });
    function backToTitle() {
-      socket.emit("returnToLobby", { code });
-    }
-   socket.on("backToTitle", () => {
       window.location.href = "/";
-    });
+    }
   </script>
 
 </body>
