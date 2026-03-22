@@ -323,8 +323,14 @@
                 index: index
             });
         }
+
         function toggleChat() {
-            document.getElementById("chatBox").classList.toggle("hidden");
+            const chatBox = document.getElementById("chatBox");
+            if (chatBox.style.display === "none" || chatBox.style.display === "") {
+                chatBox.style.display = "flex";
+            } else {
+                chatBox.style.display = "none";
+            }
         }
 
         function sendChat() {
@@ -350,7 +356,7 @@
     </script>
     <button onclick="toggleChat()" style="position:fixed; bottom:20px; right:20px; width:60px; height:60px; border-radius:30px; background:var(--yellow); border:none; font-size:24px; cursor:pointer; z-index:1000; box-shadow:0 4px 10px rgba(0,0,0,0.5); transition: transform 0.2s;">💬</button>
 
-    <div id="chatBox" class="hidden" style="position:fixed; bottom:90px; right:20px; width:300px; height:350px; background:#0f172a; border:2px solid var(--yellow); border-radius:15px; display:flex; flex-direction:column; z-index:1000; box-shadow:0 10px 30px rgba(0,0,0,0.8);">
+    <div id="chatBox" style="display:none; position:fixed; bottom:90px; right:20px; width:300px; height:350px; background:#0f172a; border:2px solid var(--yellow); border-radius:15px; flex-direction:column; z-index:1000; box-shadow:0 10px 30px rgba(0,0,0,0.8);">
         <div style="background:var(--yellow); color:black; padding:10px; border-radius:12px 12px 0 0; font-weight:bold; display:flex; justify-content:space-between;">
             <span>Room Chat</span>
             <button onclick="toggleChat()" style="background:none; border:none; font-weight:bold; cursor:pointer; margin:0; padding:0; width:auto;">X</button>
