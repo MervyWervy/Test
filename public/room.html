@@ -236,7 +236,9 @@
         if(isHost) document.getElementById("hostControls").classList.remove("hidden");
         else document.getElementById("playerWait").classList.remove("hidden");
 
-        socket.emit("joinRoom", { code: roomCode, name: name, isHost: isHost });
+        socket.on("connect", () => {
+           socket.emit("joinRoom", { code: roomCode, name: name, isHost: isHost });
+        });
 
         socket.on("invalidRoom", () => {
             alert("Room not found or has been closed.");
