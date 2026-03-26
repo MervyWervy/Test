@@ -641,6 +641,14 @@
     socket.on("answerRejected", reason => {
        show("question");
        
+       document.getElementById("answer").value = ""; 
+       
+       const submitBtn = document.querySelector("#question button");
+       if (submitBtn) {
+           submitBtn.disabled = false;
+           submitBtn.style.opacity = "1";
+       }
+
        let warning = document.getElementById("rejectWarning");
        if (!warning) {
          warning = document.createElement("div");
@@ -653,7 +661,6 @@
        }
        
        warning.innerHTML = reason ? `🚨 Rejected: ${reason}` : "Your answer was rejected! Try again.";
-       document.getElementById("answer").value = "";
     });
 
     function approveAll() {

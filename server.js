@@ -236,7 +236,10 @@ io.on("connection", socket => {
     
     io.to(playerId).emit("answerRejected", reason);
     
-    io.to(room.host).emit("reviewPhase", { answers: room.answers, players: room.players });
+    io.to(room.host).emit("reviewPhase", { 
+        answers: room.answers, 
+        players: room.players 
+    }); 
   });
 
   socket.on("vote", ({ code, choice }) => {
