@@ -295,6 +295,8 @@
     const warning = document.getElementById("rejectWarning");
       if (warning) warning.innerHTML = "";
     socket.on("question", q => {
+      const warning = document.getElementById("rejectWarning");
+      if (warning) warning.remove();
       show("question");
 
       document.getElementById("correctText").innerText = "";
@@ -587,19 +589,25 @@
       window.location.href = "/";
     }
 
-    socket.on("reviewPhase", answers => {
+    socket.on("reviewPhase", data => {
       if (!isHost) return;
       show("reviewScreen");
       
       const ul = document.getElementById("reviewList");
       ul.innerHTML = "";
       
-      for (const [id, ans] of Object.entries(answers)) {
+      for (const [id, ans] of Object.entries(data.answers)) {
+         const playerName = data.players[id].name;
+         
          const li = document.createElement("li");
          li.style.display = "flex";
          li.style.justifyContent = "space-between";
          li.style.alignItems = "center";
-         li.innerHTML = `<span><b>Answer:</b> ${ans}</span>`;
+         
+         li.innerHTML = `<span style="text-align:left;">
+            <b style="color:var(--yellow);">${playerName}</b> wrote:<br>
+            <i>"${ans}"</i>
+         </span>`;
          
          const rejectBtn = document.createElement("button");
          rejectBtn.textContent = "❌ Reject";
@@ -610,7 +618,7 @@
          rejectBtn.style.margin = "0";
          
          rejectBtn.onclick = () => {
-            const reason = prompt("Why are you rejecting this? (e.g., 'Too obvious', 'Inappropriate')");
+            const reason = prompt(`Why are you rejecting ${playerName}'s answer? (e.g., 'Too obvious')`);
             if (reason !== null) {
                socket.emit("rejectAnswer", { code, playerId: id, reason });
             }

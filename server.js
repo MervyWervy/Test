@@ -216,7 +216,7 @@ io.on("connection", socket => {
         room.timerInterval = null;
       }
       
-      io.to(room.host).emit("reviewPhase", room.answers);
+      io.to(room.host).emit("reviewPhase", { answers: room.answers, players: room.players });
       io.to(code).emit("playersWaitingForReview");
     }
   });
@@ -236,7 +236,7 @@ io.on("connection", socket => {
     
     io.to(playerId).emit("answerRejected", reason);
     
-    io.to(room.host).emit("reviewPhase", room.answers); 
+    io.to(room.host).emit("reviewPhase", { answers: room.answers, players: room.players });
   });
 
   socket.on("vote", ({ code, choice }) => {
@@ -346,7 +346,7 @@ function startTimer(code, phase, duration) {
       room.timerInterval = null;
 
       if (phase === "answer") {
-        io.to(room.host).emit("reviewPhase", room.answers);
+        io.to(room.host).emit("reviewPhase", { answers: room.answers, players: room.players });
         io.to(code).emit("playersWaitingForReview");
       }
 
