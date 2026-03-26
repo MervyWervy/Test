@@ -211,8 +211,32 @@ io.on("connection", socket => {
     room.answers[socket.id] = answer;
 
     if (Object.keys(room.answers).length === Object.keys(room.players).length) {
-      sendChoices(code);
+      if (room.timerInterval) {
+        clearInterval(room.timerInterval);
+        room.timerInterval = null;
+      }
+      
+      io.to(room.host).emit("reviewPhase", room.answers);
+      io.to(code).emit("playersWaitingForReview");
     }
+  });
+
+  socket.on("approveAnswers", code => {
+    const room = rooms[code];
+    if (!room || socket.id !== room.host) return;
+    
+    sendChoices(code);
+  });
+
+  socket.on("rejectAnswer", ({ code, playerId, reason }) => {
+    const room = rooms[code];
+    if (!room || socket.id !== room.host) return;
+
+    delete room.answers[playerId]; 
+    
+    io.to(playerId).emit("answerRejected", reason);
+    
+    io.to(room.host).emit("reviewPhase", room.answers); 
   });
 
   socket.on("vote", ({ code, choice }) => {
@@ -322,7 +346,8 @@ function startTimer(code, phase, duration) {
       room.timerInterval = null;
 
       if (phase === "answer") {
-        sendChoices(code);
+        io.to(room.host).emit("reviewPhase", room.answers);
+        io.to(code).emit("playersWaitingForReview");
       }
 
       if (phase === "vote") {
