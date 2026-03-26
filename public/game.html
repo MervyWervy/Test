@@ -599,7 +599,7 @@
       ul.innerHTML = "";
       
       for (const [id, ans] of Object.entries(data.answers)) {
-         const playerName = data.players[id].name;
+         const playerName = data.players[id] ? data.players[id].name : "Disconnected Player";
          
          const li = document.createElement("li");
          li.style.display = "flex";

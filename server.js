@@ -248,7 +248,9 @@ io.on("connection", socket => {
 
     room.votes[socket.id] = choice;
 
-    if (Object.keys(room.votes).length === Object.keys(room.players).length) {
+    const requiredVotes = room.eligibleVoters ? room.eligibleVoters.length : Object.keys(room.players).length;
+
+    if (Object.keys(room.votes).length >= requiredVotes) {
       scoreRound(code);
     }
   });
@@ -295,6 +297,10 @@ io.on("connection", socket => {
 });
 function generateStats(room) {
   const players = Object.values(room.players);
+
+  if (players.length === 0) {
+    return { bestFake: "Nobody", smartest: "Nobody", slowest: "Nobody", champion: "Nobody" };
+  }
 
   const bestFake = players.reduce((a,b) => 
     (a.fooled > b.fooled ? a : b)
@@ -402,6 +408,8 @@ function sendChoices(code) {
     }
   }
 
+  room.eligibleVoters = activeAnswerers;
+
   const choices = Object.values(room.answers).filter(a => a);
 
 
@@ -438,20 +446,22 @@ function scoreRound(code) {
       room.players[voterId].correct++;
       reveal.push(`${voterName} got it RIGHT!`);
     } else {
-      const liarId = Object.keys(room.answers)
-        .find(id => room.answers[id] === pick);
+      const liarId = Object.keys(room.answers).find(id => room.answers[id] === pick);
 
-      if (liarId) {
+      if (liarId && room.players[liarId]) {
         room.players[liarId].score += 50;
         room.players[liarId].fooled++;
         reveal.push(`${voterName} fell for "${pick}" (Faked by ${room.players[liarId].name})`);
+      } else if (liarId) {
+        reveal.push(`${voterName} fell for "${pick}" (Faked by a disconnected player)`);
       }
     }
   }
 
   if (room.favoriteChoice && room.favoriteChoice !== room.currentQuestion.a) {
     const favoriteId = Object.keys(room.answers).find(id => room.answers[id] === room.favoriteChoice);
-    if (favoriteId) {
+    
+    if (favoriteId && room.players[favoriteId]) {
       room.players[favoriteId].score += 50;
       reveal.push(`WHAT! ${room.players[favoriteId].name} got +50 points for being the Host's Favorite Answer!`);
     }
